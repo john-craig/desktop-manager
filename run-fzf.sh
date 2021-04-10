@@ -1,4 +1,4 @@
 #!/bin/bash
-read arg <<< $(echo -e 'A\nFew\nChoices' | fzf -- layout=reverse)
-python3 ./fzf-helper.py $arg
+read arg <<< $(cat $HOME/projects/python/desktop-manager/options.txt | fzf --layout=reverse)
+python3 $HOME/projects/python/desktop-manager/fzf_helper.py $arg
 #sh run-fzf.sh

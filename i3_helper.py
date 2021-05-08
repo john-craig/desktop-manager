@@ -1,6 +1,9 @@
 from i3ipc.aio import Connection
 import asyncio, time, itertools
 
+import utilities.workspace_utilities as ws_utils
+import utilities.application_utilities as app_utils
+
 #Tree parsing
 
 def get_workspace_container(tree, index):
@@ -22,86 +25,49 @@ def get_current_workspace(tree):
 
     return num
 
-#Event handling
-
-def on_event(conn, data):
-    conn.main_quit()
-
-    return data
-
-#Window utility
-
-async def start_application(name, connection=None):
-    if not connection:
-        return
-
-    global reply
-    reply = None
-
-    #start_event = lambda conn, data: callback(conn, data)
-    def callback(conn, data):
-        global reply
-        reply = data
-
-        conn.main_quit()
-
-    connection.on(
-        'window::new',
-        callback
-    )
-
-    await connection.command("exec " + name)
-
-    await connection.main()
-    connection.off(callback)
-
-    return reply.container
-
 
 #Main functions
 
-async def run_setup(workspace=1, connection=None):
-
-    terminalA = await start_application(
-        'urxvt -hold -e sh -c "sh /home/iranon/projects/python/desktop-manager/run-fzf.sh"',
-        connection=connection
-    )
-    await terminalA.command("move to workspace " + str(workspace))
-
-    feh = await start_application("feh /home/iranon/pictures/wallpapers/1581731934060.png", connection=connection)
-    await feh.command("move to workspace " + str(workspace))
-
-    terminalB = await start_application("urxvt", connection=connection)
-    await terminalB.command("move to workspace " + str(workspace))
-
-    #await terminalA.command("resize set width 20 ppt")
-    await feh.command("resize set width 65 ppt")
-    await feh.command("tabbed")
-
-    await terminalA.command("split vertical")
-    await terminalA.command("focus")
-    #result = await terminalA.command("exec sh ~/projects/python/desktop-manager/run-fzf.sh")
-
-    terminalC = await start_application(
-        "urxvt",
-        connection=connection)
-    await terminalC.command("resize set height 75 ppt")
 
 async def switch_to(workspace, connection=None):
     #First check if the target workspace is set up
     #yet. If it is not,
     pass
 
-async def main_application(command, connection=None):
-    if not connection:
-        raise Error("Something starting a primary application")
+"""
+Runs the application as 'exec application'
+and starts it in the workspace matching
+the passed string.
 
-    tree = await connection.get_tree()
-    workspace_num = get_current_workspace(tree)
+If no workspace is passed, it attempts to start
+it in the current workspace. If the current workspace
+is occupied, it starts it in the next available workspace.
 
-    workspace_container = get_workspace_container(tree, workspace_num)
+If the workspace passed has not yet been populated, it
+populates it and starts it there.
+"""
+async def start_main_application(application, connection, workspace=None, allow_occupied=False):
+    #If no workspace specified, get the current workspace
+    if not workspace:
+        workspace = await ws_utils.get_focused_workspace(connection)
 
-    print(workspace_container)
+
+    if ws_utils.is_setup(workspace):
+        used = con_utils.used_main(workspace)
+
+        if used:
+            pass
+            # # TODO: change to next available workspace
+
+        main = con_utils.get_main(workspace)
+
+        await main.command("focus")
+        await main.command("split vertical")
+        await main.command("exec " + application)
+        await main.command("layout tabbed")
+    else:
+        pass
+        ## TODO: Create setup method
 
 
 
@@ -113,18 +79,27 @@ async def manager(args):
     )
     i3 = await Connection().connect()
 
-    print(args)
+    #print(args)
 
     if len(args) == 1:
-        await run_setup(connection=i3)
+        await ws_utils.handle_setup(windows[0], connection=i3)
     #If it is a workspace number, assume we are switching
     #over to it
-    elif args[1] in windows:
-        await switch_to(int(args[1]), connection=i3)
+    #elif args[1] in windows:
+        #await switch_to(int(args[1]), connection=i3)
     #Otherwise it is a command to open in main
     #display
     else:
-        await main_application(args[1], connection=i3)
+        #await main_application(args[1], connection=i3)
+        workspace_1 = await ws_utils.get_workspace('1', i3)
+
+        await start_main_application(
+            "firejail chromium",
+            i3,
+            workspace=workspace_1
+        )
+
+
 
 def drive(args):
     loop = asyncio.get_event_loop()
@@ -132,30 +107,3 @@ def drive(args):
         loop.run_until_complete(manager(args))
     finally:
         loop.close()
-        print("FAS")
-
-#
-#
-# drive(sys.args)
-
-# i3.on('window::new', on_new_window)
-#
-# # i3.main()
-# def default_workspace():
-#     #Start Urxvt
-#     i3.command("exec -name leftColumnTerminal i3-sensible-terminal")
-#
-#     i3.command("exec feh /home/iranon/sync/pictures/wallpapers/1581731934060.png")
-#
-#     i3.command("exec i3-sensible-terminal")
-#     #
-#     # i3.command("focus prev; focus prev;")
-#     #
-#     # i3.command("resize set width 20 ppt")
-#     #
-#     # i3.command("focus next; focus next;")
-#     #
-#     # i3.command("resize set width 20 ppt")
-#
-#
-# default_workspace()

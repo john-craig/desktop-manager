@@ -4,6 +4,16 @@ import asyncio, time, itertools
 import utilities.container_utilities as con_utils
 import utilities.application_utilities as app_utils
 
+
+async def get_workspaces(connection):
+    tree = await connection.get_tree()
+
+    #This "drills down" through the tree to get the
+    #actual Con objects for the workspaces
+    workspaces = tree.nodes[1].nodes[1].nodes
+
+    return workspaces
+
 """
 Returns a Con object for the workspace with
 a name matching the name passed.
@@ -13,11 +23,7 @@ can be found.
 """
 async def get_workspace(name, connection):
     workspace = None
-    tree = await connection.get_tree()
-
-    #This "drills down" through the tree to get the
-    #actual Con objects for the workspaces
-    workspaces = tree.nodes[1].nodes[1].nodes
+    workspaces = await get_workspaces(connection)
 
     for node in workspaces:
         if node.name == name:
@@ -37,12 +43,44 @@ async def get_focused_workspace(connection):
     workspaces = tree.nodes[1].nodes[1].nodes
 
     for node in workspaces:
-        focused = await con_utils.get_focused_container(node)
+        focused = node.find_focused()
 
         if focused:
             workspace = node
 
     return workspace
+
+"""
+Sets the currently-focused workspace to the
+workspace passed.
+"""
+async def set_focused_workspace(name, connection):
+    tree = await connection.get_tree()
+    await tree.command("workspace number " + name)
+
+"""
+Returns the name of the next available workspace
+"""
+async def next_available_workspace(connection):
+    workspace_names = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '0')
+    workspaces = await get_workspaces(connection)
+    next = None
+
+    name_idx = 0
+    ws_idx = 0
+
+    while name_idx < len(workspace_names) and ws_idx < len(workspaces) and not next:
+        if workspace_names[name_idx] != workspaces[ws_idx].name:
+            next = workspace_names[name_idx]
+
+        name_idx +=1
+        ws_idx +=1
+
+    if not next and ws_idx == len(workspaces):
+        if name_idx < len(workspace_names):
+            next = workspace_names[name_idx]
+
+    return next
 
 
 """
@@ -96,8 +134,7 @@ def is_setup(workspace):
 async def handle_setup(workspace, connection=None):
     #workspace = await get_workspace(workspace, connection)
     #await workspace.command("focus")
-    tree = await connection.get_tree()
-    await tree.command("workspace number " + workspace)
+    await set_focused_workspace(workspace, connection)
 
     terminalA = await app_utils.start_application(
         'urxvt -hold -e sh -c "sh /home/iranon/projects/python/desktop-manager/run-fzf.sh"',
@@ -123,3 +160,5 @@ async def handle_setup(workspace, connection=None):
         "urxvt",
         connection=connection)
     await terminalC.command("resize set height 75 ppt")
+
+    await terminalA.command("focus")

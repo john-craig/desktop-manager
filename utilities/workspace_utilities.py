@@ -1,5 +1,6 @@
 from i3ipc.aio import Connection
 import asyncio, time, itertools
+import subprocess
 
 import utilities.container_utilities as con_utils
 import utilities.application_utilities as app_utils
@@ -116,7 +117,8 @@ def is_setup(workspace):
         if len(middle.nodes) == 0:
             #If there is only one application, it should
             #be feh
-            setup = setup and (middle.name.find("feh") != -1)
+            #setup = setup and (middle.name.find("i3-msg") != -1)
+            setup = setup and True
         else:
             #If there are multiple applications
             #it should be tabbed
@@ -137,15 +139,16 @@ async def handle_setup(workspace, connection=None):
     await set_focused_workspace(workspace, connection)
 
     terminalA = await app_utils.start_application(
-        'urxvt -hold -e sh -c "sh /home/iranon/projects/python/desktop-manager/run-fzf.sh"',
+        'alacritty --hold --command sh /home/iranon/projects/python/desktop-manager/run-fzf.sh',
         connection=connection
     )
     #await terminalA.command("move to workspace " + str(workspace))
+    await terminalA.command('mark --add fzf')
 
-    feh = await app_utils.start_application("feh /home/iranon/pictures/wallpapers/1581731934060.png", connection=connection)
+    feh = await app_utils.start_application("feh /home/iranon/.config/images/spacer.png", connection=connection)
     #await feh.command("move to workspace " + str(workspace))
 
-    terminalB = await app_utils.start_application("urxvt", connection=connection)
+    terminalB = await app_utils.start_application("alacritty", connection=connection)
     #await terminalB.command("move to workspace " + str(workspace))
 
     #await terminalA.command("resize set width 20 ppt")
@@ -157,7 +160,7 @@ async def handle_setup(workspace, connection=None):
     #result = await terminalA.command("exec sh ~/projects/python/desktop-manager/run-fzf.sh")
 
     terminalC = await app_utils.start_application(
-        "urxvt",
+        "alacritty",
         connection=connection)
     await terminalC.command("resize set height 75 ppt")
 

@@ -1,5 +1,6 @@
 from i3ipc.aio import Connection
 import asyncio, time, itertools
+import subprocess
 
 import utilities.workspace_utilities as ws_utils
 import utilities.container_utilities as con_utils
@@ -65,6 +66,17 @@ async def start_main_application(application, connection, workspace=None, allow_
     await main.command("exec " + application)
     await main.command("layout tabbed")
 
+    # # TODO: remove feh spacer afterwards
+    #await main.command("kill")
+
+"""
+Sets focus to the fzf container in the currently-focused
+workspace
+"""
+async def focus_menu(connection):
+    cur_ws = await ws_utils.get_focused_workspace(connection)
+    menu = await con_utils.get_container_by_mark('fzf', cur_ws)
+    await menu.command("focus")
 
 #Driver
 
@@ -81,8 +93,12 @@ async def manager(args):
         await switch_to(args[1], connection=i3)
     # Debug case
     elif args[1] == "test":
-        next_available = await ws_utils.next_available_workspace(i3)
-        print(next_available)
+        subprocess.run(["picom", "--opacity-rule", "0:'client *= " + '"' + "string" + '"' + "'"])
+    #Special settings
+    elif len(args) == 3:
+        #Send focus the current fzf container
+        if args[1] == "refocus" and args[2] == "fzf":
+            await focus_menu(i3)
     #Otherwise assume it is a command we want to use to
     #open an application inside of a workspace
     else:
@@ -93,7 +109,6 @@ async def manager(args):
             i3
         #    workspace=workspace_1
         )
-
 
 
 def drive(args):

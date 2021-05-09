@@ -12,12 +12,30 @@ async def get_focused_container(container):
 
     if len(container.nodes) > 0:
         for node in container.nodes:
-            focused = await get_focused_container(node)
+            result = await get_focused_container(node)
+
+            if result:
+                focused = result
 
     if container.focused == True:
         focused = container
 
     return focused
+
+async def get_container_by_mark(mark, container):
+    marked = None
+
+    if mark in container.marks:
+        marked = container
+    else:
+        for node in container.nodes:
+            result = await get_container_by_mark(mark, node)
+
+            if result:
+                marked = result
+
+    return marked
+
 
 """
 Returns the 'main' container of the workspace.

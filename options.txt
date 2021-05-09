@@ -1,4 +1,4 @@
 browse
 note
+editor
 office
-atom

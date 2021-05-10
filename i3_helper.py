@@ -93,7 +93,7 @@ async def manager(args):
         await switch_to(args[1], connection=i3)
     # Debug case
     elif args[1] == "test":
-        subprocess.run(["picom", "--opacity-rule", "0:'client *= " + '"' + "string" + '"' + "'"])
+        pass
     #Special settings
     elif len(args) == 3:
         #Send focus the current fzf container

@@ -1,7 +1,7 @@
 import sys
 
 DEFAULT_LIST = [
-    "browse", "note", "editor", "office"
+    "browse", "note", "editor", "office", "chat"
 ]
 
 OPTIONS = {

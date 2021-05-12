@@ -6,7 +6,8 @@ def utility(arguments):
         'browse': "firejail chromium",
         'note': "joplin-desktop",
         'editor': "atom",
-        'office': "onlyoffice-desktopeditors"
+        'office': "onlyoffice-desktopeditors",
+        'chat': "firejail lightcord"
     }
 
     if len(arguments) == 2:

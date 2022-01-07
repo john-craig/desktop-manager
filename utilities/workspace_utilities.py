@@ -131,6 +131,25 @@ def is_setup(workspace):
     return setup
 
 """
+Checks if the current workspace contains the
+same application as the one passed
+"""
+def same_application(workspace, application):
+    same = False
+    main = con_utils.get_main(workspace)
+
+    if main and len(main.nodes) > 0:
+        for con in main.nodes:
+            if 'window_properties' in con.ipc_data:
+                application_name = application.lower().split(" ")[0]
+                class_name = con.ipc_data['window_properties']['class'].lower()
+
+                if class_name == application_name:
+                    same = True
+    
+    return same
+
+"""
 
 """
 async def handle_setup(workspace, connection=None):
@@ -139,16 +158,19 @@ async def handle_setup(workspace, connection=None):
     await set_focused_workspace(workspace, connection)
 
     terminalA = await app_utils.start_application(
-        'alacritty --hold --command sh /home/iranon/projects/python/desktop-manager/run-fzf.sh',
+        #'alacritty --hold --command sh /opt/desktop-manager/run-fzf.sh',
+        'wezterm start -- bash -c /opt/desktop-manager/run-fzf.sh',
         connection=connection
     )
     #await terminalA.command("move to workspace " + str(workspace))
-    await terminalA.command('mark --add fzf')
+    await terminalA.command('mark control-panel-' + str(workspace))
 
     feh = await app_utils.start_application("feh /home/iranon/.config/images/spacer.png", connection=connection)
     #await feh.command("move to workspace " + str(workspace))
 
-    terminalB = await app_utils.start_application("alacritty", connection=connection)
+    #terminalB = await app_utils.start_application("alacritty", connection=connection)
+    terminalB = await app_utils.start_application("wezterm", connection=connection)
+    await terminalB.command("mark left-panel")
     #await terminalB.command("move to workspace " + str(workspace))
 
     #await terminalA.command("resize set width 20 ppt")
@@ -160,8 +182,27 @@ async def handle_setup(workspace, connection=None):
     #result = await terminalA.command("exec sh ~/projects/python/desktop-manager/run-fzf.sh")
 
     terminalC = await app_utils.start_application(
-        "alacritty",
+        #"alacritty",
+        "wezterm",
         connection=connection)
     await terminalC.command("resize set height 75 ppt")
+    await terminalC.command("mark right-panel")
 
     await terminalA.command("focus")
+
+
+"""
+Searched all setup workspaces and returns one that has
+a matching application running in it, if there is one
+"""
+async def find_next_matching_workspace(application, connection):
+    workspaces = await get_workspaces(connection)
+    match = None
+
+    for ws in workspaces:
+        if is_setup(ws):
+            if same_application(ws, application):
+                match = ws
+
+
+    return match

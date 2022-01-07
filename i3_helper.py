@@ -43,28 +43,40 @@ async def start_main_application(application, connection, workspace=None, allow_
     if not workspace:
         workspace = await ws_utils.get_focused_workspace(connection)
 
-    #Check if the workspace is set-up
-    if ws_utils.is_setup(workspace):
-        used = con_utils.used_main(workspace)
+    match = await ws_utils.find_next_matching_workspace(application, connection)
 
-        #If it is setup but main is in use, setup the next available one
-        if used:
+    # If there is already a matching workspace, then use that
+    if match:
+        workspace = match
+
+        #Open the new application in the workspace
+        main = con_utils.get_main(workspace)
+
+        await main.command("focus")
+        await main.command("exec " + application)
+    else: #Use the focused workspace or passed workspace
+        #Check if the workspace is set-up
+        if ws_utils.is_setup(workspace):
+            used = con_utils.used_main(workspace)
+
+            #If it is setup but main is in use, setup the next available one
+            if used:
+                next_avilable = await ws_utils.next_available_workspace(connection)
+                await ws_utils.handle_setup(next_avilable, connection)
+                workspace = await ws_utils.get_focused_workspace(connection)
+        #If it is not set up but it is not empty, set up the next available one
+        else:
             next_avilable = await ws_utils.next_available_workspace(connection)
             await ws_utils.handle_setup(next_avilable, connection)
             workspace = await ws_utils.get_focused_workspace(connection)
-    #If it is not set up but it is not empty, set up the next available one
-    else:
-        next_avilable = await ws_utils.next_available_workspace(connection)
-        await ws_utils.handle_setup(next_avilable, connection)
-        workspace = await ws_utils.get_focused_workspace(connection)
 
-    #Open the new application in the workspace
-    main = con_utils.get_main(workspace)
+        #Open the new application in the workspace
+        main = con_utils.get_main(workspace)
 
-    await main.command("focus")
-    await main.command("split vertical")
-    await main.command("exec " + application)
-    await main.command("layout tabbed")
+        await main.command("focus")
+        await main.command("split vertical")
+        await main.command("exec " + application)
+        await main.command("layout tabbed")
 
     # # TODO: remove feh spacer afterwards
     #await main.command("kill")
@@ -82,6 +94,8 @@ async def focus_menu(connection):
 
 async def manager(args):
     i3 = await Connection().connect()
+
+    print(args)
 
     # No additional arguments means we are setting up
     # the first workspace

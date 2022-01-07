@@ -1,13 +1,23 @@
 import sys
 
 DEFAULT_LIST = [
-    "browse", "note", "editor", "office", "chat"
+    "browse",
+    "note",
+    "editor",
+    "office",
+    "chat",
+    "passwords"
 ]
 
 OPTIONS = {
     "browse": ["unjailed"],
-    "editor": ["blog"],
+    "note": ["wiki","blog", "projects"],
     "office": ["log", "record", "regimen"]
+}
+
+SPECIAL = {
+    "editor",
+    "wiki"
 }
 
 def utility(arguments):
@@ -17,6 +27,8 @@ def utility(arguments):
     else:
         if arguments[1] in OPTIONS:
             print_list(OPTIONS[arguments[1]])
+        else:
+            print_list(DEFAULT_LIST)
 
 
 
